@@ -23,6 +23,7 @@ echo("Context $context_id \n");
 
 // TODO: Make this in the last 90 days and order by the link created_at desc
 // TODO: Some kind of limit for number of records - some kind of latest nnn links
+// TODO: Some kind of "too few" so we won't show you anything logic
 $sql =
     "SELECT L.link_id AS link_id, L.title AS link_title, R.user_id AS user_id,
       R.grade AS grade, R.created_at AS created_at, R.updated_at AS updated_at,
@@ -168,6 +169,8 @@ foreach($rows as $row ) {
 
     $health[$user_id] = $health[$user_id] + $relative;
 }
+
+arsort($health);
 
 echo("<pre>\n");var_dump($health);echo("</pre>\n");
 echo("<pre>\n");var_dump($health_detail);echo("</pre>\n");
