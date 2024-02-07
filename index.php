@@ -21,6 +21,8 @@ $OUTPUT->welcomeUserCourse();
 $context_id = $LTI->context->id;
 echo("Context $context_id \n");
 
+// TODO: Make this in the last 90 days and order by the link created_at desc
+// TODO: Some kind of limit for number of records - some kind of latest nnn links
 $sql =
     "SELECT L.link_id AS link_id, L.title AS link_title, R.user_id AS user_id,
       R.grade AS grade, R.created_at AS created_at, R.updated_at AS updated_at,
