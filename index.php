@@ -13,6 +13,16 @@ $p = $CFG->dbprefix;
 
 // Render view
 $OUTPUT->header();
+?>
+<style>
+th, td {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+</style>
+<?php
 $OUTPUT->bodyStart();
 $OUTPUT->topNav();
 
@@ -25,7 +35,6 @@ if ( ! $LTI->user->instructor ) {
 }
 
 $context_id = $LTI->context->id;
-echo("Context $context_id \n");
 
 // TODO: Make this in the last 90 days and order by the link created_at desc
 // TODO: Some kind of limit for number of records - some kind of latest nnn links
@@ -33,19 +42,26 @@ echo("Context $context_id \n");
 $sql =
     "SELECT L.link_id AS link_id, L.title AS link_title, R.user_id AS user_id,
       R.grade AS grade, R.created_at AS created_at, R.updated_at AS updated_at,
-      R.json AS json
+      R.json AS json,
+      U.displayname AS displayname, U.email AS email
     FROM {$p}lti_link AS L
     JOIN {$p}lti_result AS R
         ON L.link_id =  R.link_id
+    JOIN {$p}lti_user AS U
+        ON R.user_id =  U.user_id
     WHERE L.context_id = :CID
     ORDER BY link_id, user_id, created_at";
-echo("<pre>\n");echo($sql);echo("</pre>\n");
+// echo("<pre>\n");echo($sql);echo("</pre>\n");
 
 $arr = array("CID" => $context_id);
 
 $stmt = $PDOX->queryDie($sql, $arr);
 $rows = array();
+$users = array();
+
 while ( $row = $stmt->fetch(\PDO::FETCH_ASSOC) ) {
+    $user_id = $row['user_id'];
+    if ( ! array_key_exists($user_id, $users) ) $users[$user_id] = array($row['displayname'], $row['email']);
     $row['tries'] = null;
     $row['when'] = null;
     if ( is_string($row['json']) ) {
@@ -63,9 +79,13 @@ while ( $row = $stmt->fetch(\PDO::FETCH_ASSOC) ) {
         }
     }
     unset($row['json']);
+    unset($row['displayname']);
+    unset($row['email']);
     array_push($rows, $row);
 }
 $stmt->closeCursor();
+
+echo("<p>SQL Rows: ".count($rows)."</p>\n");
 
 // Compute ranges
 $links = array();
@@ -177,8 +197,14 @@ foreach($rows as $row ) {
 }
 
 arsort($health);
+echo('<table border="2">'."\n");
+foreach($health as $user_id => $value ) {
+    echo("<tr><td>".$users[$user_id][0].' '.$users[$user_id][1]);
+    echo("</td><td>".$value."</td></tr>");
+}
+echo("</table>\n");
 
-echo("<pre>\n");var_dump($health);echo("</pre>\n");
+// echo("<pre>\n");var_dump($health);echo("</pre>\n");
 // echo("<pre>\n");var_dump($health_detail);echo("</pre>\n");
 
 if ( $LTI->user->instructor ) {
