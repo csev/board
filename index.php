@@ -18,6 +18,12 @@ $OUTPUT->topNav();
 
 $OUTPUT->welcomeUserCourse();
 
+if ( ! $LTI->user->instructor ) {
+    echo("<p>This tool is in test mode - check back later</p>.");
+    $OUTPUT->footer();
+    return;
+}
+
 $context_id = $LTI->context->id;
 echo("Context $context_id \n");
 
@@ -173,7 +179,7 @@ foreach($rows as $row ) {
 arsort($health);
 
 echo("<pre>\n");var_dump($health);echo("</pre>\n");
-echo("<pre>\n");var_dump($health_detail);echo("</pre>\n");
+// echo("<pre>\n");var_dump($health_detail);echo("</pre>\n");
 
 if ( $LTI->user->instructor ) {
     $OUTPUT->footer();
