@@ -52,7 +52,7 @@ while ( $row = $stmt->fetch(\PDO::FETCH_ASSOC) ) {
         try {
             $js = json_decode($row['json'], true);
             $row['tries'] = $js['tries'] ?? null;
-            if ( is_int($js['when']) ) {
+            if ( array_key_exists('when', $js) && is_int($js['when']) ) {
                 // $row['when'] = date("Y-m-d H:i:s",$js['when']);
                 $row['when'] = $PDOX->timeToMySqlTimeStamp($js['when']);
             } else {
