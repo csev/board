@@ -52,7 +52,8 @@ $sql =
     JOIN {$p}lti_user AS U
         ON R.user_id =  U.user_id
     WHERE L.context_id = :CID
-    ORDER BY link_id, user_id, created_at";
+    ORDER BY link_id, user_id, created_at
+    LIMIT 50000";
 // echo("<pre>\n");echo($sql);echo("</pre>\n");
 
 $arr = array("CID" => $context_id);
@@ -83,7 +84,7 @@ while ( $row = $stmt->fetch(\PDO::FETCH_ASSOC) ) {
     unset($row['json']);
     unset($row['displayname']);
     unset($row['email']);
-    array_push($rows, $row);
+    array_push($rows, array_merge($row));
 }
 $stmt->closeCursor();
 
