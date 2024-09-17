@@ -277,13 +277,17 @@ echo("<p>SQL Rows: ".count($rows)."</p>\n");
 
 echo("<p>Average: $average Median: $median</p>\n");
 
+echo("<button onclick=\"$('.noname').toggle();$('.showname').toggle();\">Show/Hide</button>");
 echo('<table border="2">'."\n");
 $rank = 0;
 foreach($health as $user_id => $value ) {
     $rank = $rank + 1;
     $name = "*** name hidden during test ***";
     $name = $users[$user_id][0].' '.$users[$user_id][1];
-    echo("<tr><td>".$name);
+    echo("<tr><td>");
+    echo('<span class="noname">*** Name Hidden ****</span><span class="showname" style="display:none;">');
+    echo(htmlentities($name));
+    echo('</span>');
     echo("</td><td>".$value);
     echo("</td><td>".$rank."/".$count);
     echo("</td><td>".$notes[$user_id]);
