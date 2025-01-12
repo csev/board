@@ -210,8 +210,6 @@ $arr = array(
     "USERS" => serialize($users)
 );
 error_log("Board stored in cache...");
-    var_dump($health);
-    var_dump($users);
 
 $PDOX->queryDie($sql, $arr);
 
