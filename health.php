@@ -18,12 +18,23 @@ $context_id = $LTI->context->id;
 
 
 // Clean up the cache - No course lasts more than 10 minutes
-$sql = "DELETE FROM {$p}board_cache WHERE `created_at` < ADDDATE(NOW(), INTERVAL -10 MINUTES)";
+$sql = "DELETE FROM {$p}board_cache WHERE `created_at` < ADDDATE(NOW(), INTERVAL -10 MINUTE)";
+$PDOX->queryDie($sql);
 
 $sql =
     "SELECT row_count, health, users FROM {$p}board_cache
      WHERE context_id = :CID";
 
+$arr = array("CID" => $context_id);
+
+$row = $PDOX->rowDie($sql, $arr);
+if ( is_array($row) ) {
+    $row_count = $row["row_count"];
+    $health = unserialize($row["health"]);
+    $users = unserialize($row["users"]);
+    error_log("Board retrieved from cache...");
+    return $health;
+}    
 
 // TODO: Make this in the last 90 days and order by the link created_at desc
 // TODO: Some kind of limit for number of records - some kind of latest nnn links
@@ -57,8 +68,6 @@ $sqlold =
     ORDER BY link_id, user_id, created_at
     LIMIT 10000";
 // echo("<pre>\n");echo($sql);echo("</pre>\n");
-
-$arr = array("CID" => $context_id);
 
 $stmt = $PDOX->queryReturnError($sql, $arr);
 if ( ! $stmt->success ) {
@@ -185,6 +194,26 @@ foreach($rows as $row ) {
 
     $health[$user_id] = $health[$user_id] + $relative;
 }
+
+// Store for later
+
+$sql =
+    "INSERT INTO {$p}board_cache (context_id, row_count, health, users, created_at)
+    VALUES(:CID, :ROWS, :HEALTH, :USERS, NOW())
+    ON DUPLICATE KEY UPDATE
+    row_count=:ROWS, health=:HEALTH, users=:USERS, created_at=NOW();";
+
+$arr = array(
+    "CID" => $context_id,
+    "ROWS" => $row_count,
+    "HEALTH" => serialize($health),
+    "USERS" => serialize($users)
+);
+error_log("Board stored in cache...");
+    var_dump($health);
+    var_dump($users);
+
+$PDOX->queryDie($sql, $arr);
 
 return $health;
 }
