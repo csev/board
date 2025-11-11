@@ -16,7 +16,6 @@ $p = $CFG->dbprefix;
 
 $context_id = $LTI->context->id;
 
-
 // Clean up the cache - No course lasts more than 10 minutes
 $sql = "DELETE FROM {$p}board_cache WHERE `created_at` < ADDDATE(NOW(), INTERVAL -10 MINUTE)";
 $PDOX->queryDie($sql);
@@ -37,11 +36,10 @@ if ( is_array($row) ) {
 }    
 
 // TODO: Make this in the last 90 days and order by the link created_at desc
-// TODO: Some kind of limit for number of records - some kind of latest nnn links
 // TODO: Some kind of "too few" so we won't show you anything logic
 
 $sql =
-    "SELECT L.link_id AS link_id, R.user_id AS user_id,
+    "SELECT L.link_id AS link_id, L.title AS title, R.user_id AS user_id,
       R.attempts AS attempts, R.attempted_at AS attempted_at,
       R.grade AS grade, R.created_at AS created_at, R.updated_at AS updated_at,
       U.displayname AS displayname, U.email AS email
@@ -51,23 +49,10 @@ $sql =
     JOIN {$p}lti_user AS U
         ON R.user_id =  U.user_id
     WHERE L.context_id = :CID
-    ORDER BY link_id, user_id, created_at
+    ORDER BY link_id DESC, user_id, created_at
     LIMIT 10000";
 
-$sqlold =
-    "SELECT L.link_id AS link_id, R.user_id AS user_id,
-      0 AS attempts, 0 AS attempted_at,
-      R.grade AS grade, R.created_at AS created_at, R.updated_at AS updated_at,
-      U.displayname AS displayname, U.email AS email
-    FROM {$p}lti_link AS L
-    JOIN {$p}lti_result AS R
-        ON L.link_id =  R.link_id
-    JOIN {$p}lti_user AS U
-        ON R.user_id =  U.user_id
-    WHERE L.context_id = :CID
-    ORDER BY link_id, user_id, created_at
-    LIMIT 10000";
-// echo("<pre>\n");echo($sql);echo("</pre>\n");
+// echo("<pre>\n");echo($sql);echo("\n");var_dump($arr);echo("</pre>\n");
 
 $stmt = $PDOX->queryReturnError($sql, $arr);
 if ( ! $stmt->success ) {
@@ -92,6 +77,8 @@ $links = array();
 $ranges = array();
 
 $curr_link_id = -1;
+$curr_link_results = 0;
+$curr_link_title = '';
 $create_min = null;
 $create_max = null;
 $update_min = null;
@@ -104,8 +91,11 @@ foreach($rows as $row ) {
     if ( $curr_link_id != $row['link_id'] ) {
         if ( $curr_link_id != -1 ) {
             $ranges[$curr_link_id] = array($create_min, $create_max, $update_min, $update_max, $attempted_at_min, $attempted_at_max, $attempts_min, $attempts_max);
+	    $links[$curr_link_id] = array($curr_link_title, $curr_link_count);
         }
         $curr_link_id = $row['link_id'];
+	$curr_link_title = $row['title'];
+	$curr_link_count = 0;
         $create_min = null;
         $create_max = null;
         $update_min = null;
@@ -115,6 +105,7 @@ foreach($rows as $row ) {
         $attempts_min = null;
         $attempts_max = null;
     }
+    $curr_link_count++;
     if ( $create_max == null || $row['created_at'] > $create_max ) $create_max = $row['created_at'];
     if ( $create_min == null || $row['created_at'] < $create_min ) $create_min = $row['created_at'];
     if ( $update_max == null || $row['updated_at'] > $update_max ) $update_max = $row['updated_at'];
@@ -127,6 +118,7 @@ foreach($rows as $row ) {
 
 if ( $curr_link_id != -1 ) {
     $ranges[$curr_link_id] = array($create_min, $create_max, $update_min, $update_max, $attempted_at_min, $attempted_at_max, $attempts_min, $attempts_max);
+    $links[$curr_link_id] = array($curr_link_title, $curr_link_count);
 }
 
 // Now we have each link, its title, and the ranges of create, update, attempted_at, and attempts
