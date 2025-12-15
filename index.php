@@ -128,7 +128,11 @@ foreach($health as $user_id => $value ) {
     $name = $users[$user_id][0].' '.$users[$user_id][1];
     echo("<tr><td>");
     echo('<span class="noname">*** Name Hidden ****</span><span class="showname" style="display:none;">');
-    echo(htmlentities($name));
+    echo(htmlentities($users[$user_id][0]));
+    echo('</span>');
+    echo("</td><td>");
+    echo('<span class="noname">*** Email Hidden ****</span><span class="showname" style="display:none;">');
+    echo(htmlentities($users[$user_id][1]));
     echo('</span>');
     echo("</td><td>".$value);
     echo("</td><td>".$rank."/".$count);
